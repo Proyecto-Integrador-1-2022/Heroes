@@ -100,6 +100,7 @@ export class HeroService {
   }
 
   /** PUT: update the hero on the server */
+  /** Actualizando heroe */
   updateHero (hero: Hero): Observable<any> {
     const url = `${this.heroesUrl}/${hero.id}`;
     return this.http.put(url, hero, httpOptions).pipe(

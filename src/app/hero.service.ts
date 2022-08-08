@@ -8,11 +8,19 @@ import { Hero } from './hero';
 import { MessageService } from './message.service';
 
 
+interface GetResponse {
+  _embedded: {
+    heroes: Hero[];
+    _links: {self: {href: string}};
+  };
+}
+
 @Injectable({ providedIn: 'root' })
 export class HeroService {
 
-  private heroesUrl = 'api/heroes';  // URL to web api
+  private heroesUrl = 'zbwockawixgbuo:be4dfa128809bd220a292c7485115d29855082ca778e3c6a12e2f5ff18cbdb08@ec2-54-225-234-165.compute-1.amazonaws.com:5432/d94lu6o5p27u3f';  // URL to web api
 
+  
   httpOptions = {
     headers: new HttpHeaders({ 'Content-Type': 'application/json' })
   };
@@ -22,11 +30,12 @@ export class HeroService {
     private messageService: MessageService) { }
 
   /** GET heroes from the server */
-  getHeroes(): Observable<Hero[]> {
-    return this.http.get<Hero[]>(this.heroesUrl)
+  getHeroes (): Observable<Hero[]> {
+    return this.http.get<GetResponse>(this.heroesUrl)
       .pipe(
-        tap(_ => this.log('fetched heroes')),
-        catchError(this.handleError<Hero[]>('getHeroes', []))
+        map(response => response._embedded.heroes),
+        tap(heroes => this.log(`fetched heroes`)),
+        catchError(this.handleError('getHeroes', []))
       );
   }
 
@@ -59,12 +68,15 @@ export class HeroService {
       // if not search term, return empty hero array.
       return of([]);
     }
-    return this.http.get<Hero[]>(`${this.heroesUrl}/?name=${term}`).pipe(
-      tap(x => x.length ?
-         this.log(`found heroes matching "${term}"`) :
-         this.log(`no heroes matching "${term}"`)),
+
+    const url = `${this.heroesUrl}/search/name?contains=${term}`;
+  return this.http.get<GetResponse>(url)
+    .pipe(
+      map(response => response._embedded.heroes),
+      tap(_ => this.log(`found heroes matching "${term}"`)),
       catchError(this.handleError<Hero[]>('searchHeroes', []))
-    );
+  );
+   
   }
 
   //////// Save methods //////////
@@ -88,8 +100,9 @@ export class HeroService {
   }
 
   /** PUT: update the hero on the server */
-  updateHero(hero: Hero): Observable<any> {
-    return this.http.put(this.heroesUrl, hero, this.httpOptions).pipe(
+  updateHero (hero: Hero): Observable<any> {
+    const url = `${this.heroesUrl}/${hero.id}`;
+    return this.http.put(url, hero, httpOptions).pipe(
       tap(_ => this.log(`updated hero id=${hero.id}`)),
       catchError(this.handleError<any>('updateHero'))
     );
